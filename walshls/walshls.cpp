@@ -5,6 +5,8 @@
 
 #include <cassert>
 
+const bool SHOW_STEPS = true;
+
 // Global variables (I know, I am lazy :))
 int n, k;
 // The format of the file in memory
@@ -43,24 +45,38 @@ void s_vector_entry::flip() {
 
 std::list<s_vector_entry*> B;
 
-unsigned long long pow2(unsigned int exp) {
+inline unsigned long long pow2(unsigned int exp) {
 	return 1 << static_cast<long long>(exp);
 }
 
+void walsh_recursive(std::vector<double>& from, std::vector<double>& to, unsigned int start, unsigned int end) {
+	unsigned int size = end-start;
+	if( size == 1 )
+		return;
+
+	for( unsigned int i=start; i<start+size/2; ++i ) {
+		to[i]        = from[i] + from[size/2+i];
+		to[size/2+i] = from[i] - from[size/2+i];
+	}
+	walsh_recursive(to, from, start, start+size/2);
+	walsh_recursive(to, from, start+size/2, end);
+}
+
 /**
- * Transform a vector of fitness evaluations to
- * a vector of walsh coefficient
+ * Calculate the walsh coefficient for a vector of 2^k entries.
  */
-std::vector<double> walsh_transform(const std::vector<double>& fitness_evaluations) {
-	if( fitness_evaluations.size() == 1 )
-		return fitness_evaluations;
+inline std::vector<double> walsh_transform(const std::vector<double>& fitness_evaluations) {
+	std::vector<double> walsh1(fitness_evaluations);
+	std::vector<double> walsh2(pow2(k));
+	walsh_recursive(walsh1, walsh2, 0, pow2(k));
 
-	// Make sure that the size of the given vector is a power of 2
-	assert((fitness_evaluations.size()-1)&fitness_evaluations.size()==0);
-
-	std::vector<double> walsh(fitness_evaluations);
-
-	return walsh;
+	// The recursive functions swaps the vector to read to and
+	// write from every recursion, there are k recursions deep.
+	// Return the correct vector.
+	if( k%2==0 )
+		return walsh1;
+	else
+		return walsh2;
 }
 
 int main()
@@ -86,8 +102,8 @@ int main()
 			std::cin >> subfunctions[i].first[j];
 		}
 
-		// Read the evaluatio)ns in
-		for( int j=0; j<pow2(k); ++j ) {
+		// Read the evaluations in
+		for( unsigned int j=0; j<pow2(k); ++j ) {
 			std::cin >> subfunctions[i].second[j];
 		}
 	}
@@ -96,11 +112,19 @@ int main()
 	// and add them in wprime
 	Wprime.resize(pow2(n));
 	for( int i=0; i<n; ++i ) {
-		// TODO some magic
-		walsh_transform(subfunctions[i].second);
+		// Calculate the subfunction walsh coefficients
+		std::vector<double> walsh_coefficients = walsh_transform(subfunctions[i].second);
+
+		if( SHOW_STEPS ) {
+			std::cout << "Walsh coefficients subfunction " << i << ": ";
+			for( double coef : walsh_coefficients )
+				std::cout << coef << " ";
+			std::cout << std::endl;
+		}
 	}
 
 	// Setup the S vector
+	S.resize(n);
 	for( int i=0; i<n; ++i ) {
 		
 	}
