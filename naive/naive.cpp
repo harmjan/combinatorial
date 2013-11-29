@@ -9,14 +9,18 @@ std::vector<std::pair<std::vector<int>,std::vector<double>>> subfunctions(n);
 
 const bool SHOW_STEPS = true;
 
+inline unsigned long long pow2(unsigned int exp) {
+	return 1 << static_cast<long long>(exp);
+}
+
 double calculateFitness(std::vector<bool>& bitstring) {
 	double sum = 0;
 
 	for( int i=0; i<n; ++i ) {
-		int subbitstring = 0;
+		unsigned long long subbitstring = 0;
 		for( int j=0; j<k; ++j ) {
 			if( bitstring[subfunctions[i].first[j]] ) {
-				subbitstring += 1<<j;
+				subbitstring += pow2(k-j-1);
 			}
 		}
 		sum += subfunctions[i].second[subbitstring];
@@ -40,7 +44,7 @@ int main() {
 	subfunctions.resize(n);
 	for( int i=0; i<n; ++i ) {
 		subfunctions[i].first.resize(k);
-		subfunctions[i].second.resize(1<<k);
+		subfunctions[i].second.resize(pow2(k));
 
 		// Read the mapping in
 		for( int j=0; j<k; ++j ) {
@@ -48,7 +52,7 @@ int main() {
 		}
 
 		// Read the evaluatio)ns in
-		for( int j=0; j<(1<<k); ++j ) {
+		for( int j=0; j<(pow2(k)); ++j ) {
 			std::cin >> subfunctions[i].second[j];
 		}
 	}
