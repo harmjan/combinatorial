@@ -45,7 +45,7 @@ int main() {
 		// Generate the fitness values
 		subfunctions[i].second.resize(1<<k);
 		for( int j=0; j<(1<<k); ++j ) {
-			subfunctions[i].second[j] = static_cast<double>(rand()) / static_cast<double>(rand());
+			subfunctions[i].second[j] = static_cast<double>(rand()) / static_cast<double>(RAND_MAX);
 		}
 	}
 
