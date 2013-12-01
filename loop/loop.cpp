@@ -1,23 +1,40 @@
-#include "WhitleyLoop.h"
-
-#include <algorithm>
-
-using namespace std;
+#include <list>
+#include <vector>
+#include "structures.h"
 
 
-int WhitleyLoop::a = 10;
+//
+// Class declarations
+//
 
 
-WhitleyLoop::WhitleyLoop(void)
-{
-}
-
-WhitleyLoop::~WhitleyLoop(void)
-{
-}
+class S : public std::vector<s_vector_entry> {};
+class W : public std::vector<walsh_vector_entry> {};
+class B : public std::list<s_vector_entry*> {};
 
 
-vector<bool> WhitleyLoop::run(
+//
+// Function declarations
+//
+
+
+std::vector<bool> run(std::vector<bool> bitstring, std::vector<s_vector_entry>& S, std::vector<walsh_vector_entry>& Wprime,	std::list<s_vector_entry*>& B);
+std::vector<bool> run(std::vector<bool> bitstring, S& S, W& W, B& B);
+s_vector_entry* getNextBest(B& B);
+void addToB(B& B, s_vector_entry* item);
+void removeFromB(B& B, s_vector_entry* item);
+int improvement(const s_vector_entry& move);
+
+
+
+//
+// Implementations
+//
+
+
+
+// Compatibility overload
+std::vector<bool> run(
 		std::vector<bool> bitstring,
 		std::vector<s_vector_entry>& S,
 		std::vector<walsh_vector_entry>& W,
@@ -34,7 +51,8 @@ vector<bool> WhitleyLoop::run(
 }
 
 
-vector<bool> WhitleyLoop::run(vector<bool> bitstring, S& S, W& W, B& B)
+// Run algorithm
+std::vector<bool> run(std::vector<bool> bitstring, S& S, W& W, B& B)
 {
 	// Do steepest descent while there are impoving moves
 	while ( !B.empty() )
@@ -42,28 +60,28 @@ vector<bool> WhitleyLoop::run(vector<bool> bitstring, S& S, W& W, B& B)
 		// Get next impoving move
 		s_vector_entry* flipTarget = getNextBest(B);
 
-		list<s_vector_entry*> dirty; // We store updated partial sums here
+		std::list<s_vector_entry*> dirty; // We store updated partial sums here
 
-		list<walsh_vector_entry*>& coefficients = flipTarget->walsh_coefficients;
+		std::list<walsh_vector_entry*>& coefficients = flipTarget->walsh_coefficients;
 
 		// For every walsh coefficient i that contains the bit being flipped
-		for ( list<walsh_vector_entry*>::iterator i = coefficients.begin() ; i != coefficients.end ; i++ )
+		for ( std::list<walsh_vector_entry*>::iterator i = coefficients.begin() ; i != coefficients.end ; i++ )
 		{
 			// Flip walsh coefficient
 			(*i)->value *= -1;
 
 			// For every partial sum that this coefficient contributes to
-			for ( list<s_vector_entry*>::iterator r = (*i)->influenced_sums.begin() ; r != (*i)->influenced_sums.end() ; r++ )
+			for ( std::list<s_vector_entry*>::iterator r = (*i)->influenced_sums.begin() ; r != (*i)->influenced_sums.end() ; r++ )
 			{
 				// Update partial sum
 				(*r)->value += 2*(*i)->value;
 				// Mark partial sum as dirty
-				dirty.insert(*r);
+				dirty.push_back(*r);
 			}
 		}
 
 		// Update buffer B
-		for ( list<s_vector_entry*>::iterator r = dirty.begin() ; r != dirty.end ; r++ )
+		for ( std::list<s_vector_entry*>::iterator r = dirty.begin() ; r != dirty.end ; r++ )
 		{
 			if ( improvement(**r) > 0 )
 				addToB(B, *r);
@@ -77,7 +95,7 @@ vector<bool> WhitleyLoop::run(vector<bool> bitstring, S& S, W& W, B& B)
 
 
 // Removes and returns the next best move from buffer B
-s_vector_entry* WhitleyLoop::getNextBest(B& B)
+s_vector_entry* getNextBest(B& B)
 {
 	// Scan the first a items
 	int itemsScanned = 0;
@@ -97,7 +115,7 @@ s_vector_entry* WhitleyLoop::getNextBest(B& B)
 
 
 // Adds a new move in B
-void WhitleyLoop::addToB(B& B, s_vector_entry* item)
+void addToB(B& B, s_vector_entry* item)
 {
 	if ( item->buffer_entry != B.end() )
 		return; // Already in B
@@ -112,7 +130,7 @@ void WhitleyLoop::addToB(B& B, s_vector_entry* item)
 
 
 // Removes move from B
-void WhitleyLoop::removeFromB(B& B, s_vector_entry* item)
+void removeFromB(B& B, s_vector_entry* item)
 {
 	if ( item->buffer_entry == B.end() )
 		return; // Not in B
@@ -122,4 +140,14 @@ void WhitleyLoop::removeFromB(B& B, s_vector_entry* item)
 		item->buffer_entry = B.end();
 		//TODO: sort?
 	}
+}
+
+
+// Normalize for descent or ascent
+// Returns positive value for imporoving moves
+// Greater value means greater improvement
+int improvement(const s_vector_entry& move)
+{
+	return move.value; // Descent
+	//return -move.value; // Ascent
 }
