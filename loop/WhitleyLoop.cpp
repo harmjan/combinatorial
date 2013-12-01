@@ -42,7 +42,7 @@ vector<bool> WhitleyLoop::run(vector<bool> bitstring, S& S, W& W, B& B)
 		// Get next impoving move
 		s_vector_entry* flipTarget = getNextBest(B);
 
-		set<s_vector_entry*> dirty; // We store updated partial sums here
+		list<s_vector_entry*> dirty; // We store updated partial sums here
 
 		list<walsh_vector_entry*>& coefficients = flipTarget->walsh_coefficients;
 
@@ -53,7 +53,7 @@ vector<bool> WhitleyLoop::run(vector<bool> bitstring, S& S, W& W, B& B)
 			(*i)->value *= -1;
 
 			// For every partial sum that this coefficient contributes to
-			for ( list<s_vector_entry*>::iterator r = (*i)->influenced_sums.begin() ; r != (*i)->contributions.end() ; r++ )
+			for ( list<s_vector_entry*>::iterator r = (*i)->influenced_sums.begin() ; r != (*i)->influenced_sums.end() ; r++ )
 			{
 				// Update partial sum
 				(*r)->value += 2*(*i)->value;
@@ -63,7 +63,7 @@ vector<bool> WhitleyLoop::run(vector<bool> bitstring, S& S, W& W, B& B)
 		}
 
 		// Update buffer B
-		for ( set<s_vector_entry*>::iterator r = dirty.begin() ; r != dirty.end ; r++ )
+		for ( list<s_vector_entry*>::iterator r = dirty.begin() ; r != dirty.end ; r++ )
 		{
 			if ( improvement(**r) > 0 )
 				addToB(B, *r);

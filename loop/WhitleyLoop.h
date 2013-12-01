@@ -9,7 +9,7 @@
 
 class S : public std::vector<s_vector_entry> {};
 class W : public std::vector<walsh_vector_entry> {};
-class B	: public std::list<s_vector_entry*> {};
+class B : public std::list<s_vector_entry*> {};
 
 
 class WhitleyLoop
