@@ -8,9 +8,9 @@
 //
 
 
-class S : public std::vector<s_vector_entry> {};
-class W : public std::vector<walsh_vector_entry> {};
-class B : public std::list<s_vector_entry*> {};
+//class S : public std::vector<s_vector_entry> {};
+//class W : public std::vector<walsh_vector_entry> {};
+//class B : public std::list<s_vector_entry*> {};
 
 
 //
@@ -19,10 +19,9 @@ class B : public std::list<s_vector_entry*> {};
 
 
 std::vector<bool> run(std::vector<bool> bitstring, std::vector<s_vector_entry>& S, std::vector<walsh_vector_entry>& Wprime,	std::list<s_vector_entry*>& B);
-std::vector<bool> run(std::vector<bool> bitstring, S& S, W& W, B& B);
-s_vector_entry* getNextBest(B& B);
-void addToB(B& B, s_vector_entry* item);
-void removeFromB(B& B, s_vector_entry* item);
+s_vector_entry* getNextBest(std::list<s_vector_entry*>& B);
+void addToB(std::list<s_vector_entry*>& B, s_vector_entry* item);
+void removeFromB(std::list<s_vector_entry*>& B, s_vector_entry* item);
 int improvement(const s_vector_entry& move);
 
 
@@ -32,27 +31,8 @@ int improvement(const s_vector_entry& move);
 //
 
 
-
-// Compatibility overload
-std::vector<bool> run(
-		std::vector<bool> bitstring,
-		std::vector<s_vector_entry>& S,
-		std::vector<walsh_vector_entry>& W,
-		std::list<s_vector_entry*>& B)
-{
-	::S tS;
-	::B tB;
-	::W tW;
-	tS.insert(tS.begin(), S.begin(), S.end());
-	tB.insert(tB.begin(), B.begin(), B.end());
-	tW.insert(tW.begin(), W.begin(), W.end());
-
-	return run(bitstring, tS, tW, tB);
-}
-
-
 // Run algorithm
-std::vector<bool> run(std::vector<bool> bitstring, S& S, W& W, B& B)
+std::vector<bool> run(std::vector<bool> bitstring, std::vector<s_vector_entry>& S, std::vector<walsh_vector_entry>& W, std::list<s_vector_entry*>& B)
 {
 	// Do steepest descent while there are impoving moves
 	while ( !B.empty() )
@@ -63,6 +43,8 @@ std::vector<bool> run(std::vector<bool> bitstring, S& S, W& W, B& B)
 		std::list<s_vector_entry*> dirty; // We store updated partial sums here
 
 		std::list<walsh_vector_entry*>& coefficients = flipTarget->walsh_coefficients;
+
+		//TODO: flip bit in bitstring
 
 		// For every walsh coefficient i that contains the bit being flipped
 		for ( std::list<walsh_vector_entry*>::iterator i = coefficients.begin() ; i != coefficients.end ; i++ )
@@ -95,11 +77,11 @@ std::vector<bool> run(std::vector<bool> bitstring, S& S, W& W, B& B)
 
 
 // Removes and returns the next best move from buffer B
-s_vector_entry* getNextBest(B& B)
+s_vector_entry* getNextBest(std::list<s_vector_entry*>& B)
 {
 	// Scan the first a items
 	int itemsScanned = 0;
-	B::iterator bestMove = B.begin();
+	std::list<s_vector_entry*>::iterator bestMove = B.begin();
 	for ( B::iterator i=B.begin() ; itemsScanned < a && i!=B.end ; i++ )
 	{
 		if ( improvement(**i) > improvement(**bestMove) )
@@ -115,7 +97,7 @@ s_vector_entry* getNextBest(B& B)
 
 
 // Adds a new move in B
-void addToB(B& B, s_vector_entry* item)
+void addToB(std::list<s_vector_entry*>& B, s_vector_entry* item)
 {
 	if ( item->buffer_entry != B.end() )
 		return; // Already in B
@@ -130,7 +112,7 @@ void addToB(B& B, s_vector_entry* item)
 
 
 // Removes move from B
-void removeFromB(B& B, s_vector_entry* item)
+void removeFromB(std::list<s_vector_entry*>& B, s_vector_entry* item)
 {
 	if ( item->buffer_entry == B.end() )
 		return; // Not in B
