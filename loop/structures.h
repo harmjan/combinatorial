@@ -10,6 +10,7 @@ struct s_vector_entry {
 	double value;
 	std::list<walsh_vector_entry*> walsh_coefficients;
 	std::list<s_vector_entry*>::iterator buffer_entry;
+	int bitstring_index;
 
 	void flip();
 };

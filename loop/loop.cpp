@@ -3,15 +3,6 @@
 #include "structures.h"
 
 
-//
-// Class declarations
-//
-
-
-//class S : public std::vector<s_vector_entry> {};
-//class W : public std::vector<walsh_vector_entry> {};
-//class B : public std::list<s_vector_entry*> {};
-
 
 //
 // Function declarations
@@ -44,7 +35,9 @@ std::vector<bool> run(std::vector<bool> bitstring, std::vector<s_vector_entry>& 
 
 		std::list<walsh_vector_entry*>& coefficients = flipTarget->walsh_coefficients;
 
-		//TODO: flip bit in bitstring
+		// Flip bit in bitstring
+		//*flipTarget->bitstring_entry = !*flipTarget->bitstring_entry; // This option makes the bitstring parameter and return value redundant
+		bitstring[flipTarget->bitstring_index] = !bitstring[flipTarget->bitstring_index];
 
 		// For every walsh coefficient i that contains the bit being flipped
 		for ( std::list<walsh_vector_entry*>::iterator i = coefficients.begin() ; i != coefficients.end ; i++ )
@@ -52,7 +45,7 @@ std::vector<bool> run(std::vector<bool> bitstring, std::vector<s_vector_entry>& 
 			// Flip walsh coefficient
 			(*i)->value *= -1;
 
-			// For every partial sum that this coefficient contributes to
+			// For every partial sum that this coefficient contributes to (including the bit just flipped)
 			for ( std::list<s_vector_entry*>::iterator r = (*i)->influenced_sums.begin() ; r != (*i)->influenced_sums.end() ; r++ )
 			{
 				// Update partial sum
@@ -82,7 +75,7 @@ s_vector_entry* getNextBest(std::list<s_vector_entry*>& B, int a)
 	// Scan the first a items
 	int itemsScanned = 0;
 	std::list<s_vector_entry*>::iterator bestMove = B.begin();
-	for ( std::list<s_vector_entry*>::iterator i=B.begin() ; itemsScanned < a && i!=B.end() ; i++ )
+	for ( std::list<s_vector_entry*>::iterator i=B.begin() ; itemsScanned < a && i != B.end() ; i++ )
 	{
 		if ( improvement(**i) > improvement(**bestMove) )
 			bestMove = i;
