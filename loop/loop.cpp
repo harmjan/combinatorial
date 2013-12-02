@@ -32,13 +32,13 @@ int improvement(const s_vector_entry& move);
 
 
 // Run algorithm
-std::vector<bool> run(std::vector<bool> bitstring, std::vector<s_vector_entry>& S, std::vector<walsh_vector_entry>& W, std::list<s_vector_entry*>& B)
+std::vector<bool> run(std::vector<bool> bitstring, std::vector<s_vector_entry>& S, std::vector<walsh_vector_entry>& W, std::list<s_vector_entry*>& B, int a)
 {
 	// Do steepest descent while there are impoving moves
 	while ( !B.empty() )
 	{
 		// Get next impoving move
-		s_vector_entry* flipTarget = getNextBest(B);
+		s_vector_entry* flipTarget = getNextBest(B, a);
 
 		std::list<s_vector_entry*> dirty; // We store updated partial sums here
 
@@ -77,15 +77,16 @@ std::vector<bool> run(std::vector<bool> bitstring, std::vector<s_vector_entry>& 
 
 
 // Removes and returns the next best move from buffer B
-s_vector_entry* getNextBest(std::list<s_vector_entry*>& B)
+s_vector_entry* getNextBest(std::list<s_vector_entry*>& B, int a)
 {
 	// Scan the first a items
 	int itemsScanned = 0;
 	std::list<s_vector_entry*>::iterator bestMove = B.begin();
-	for ( B::iterator i=B.begin() ; itemsScanned < a && i!=B.end ; i++ )
+	for ( std::list<s_vector_entry*>::iterator i=B.begin() ; itemsScanned < a && i!=B.end() ; i++ )
 	{
 		if ( improvement(**i) > improvement(**bestMove) )
 			bestMove = i;
+		itemsScanned++;
 	}
 
 	// Remove best move from the buffer
@@ -130,6 +131,6 @@ void removeFromB(std::list<s_vector_entry*>& B, s_vector_entry* item)
 // Greater value means greater improvement
 int improvement(const s_vector_entry& move)
 {
-	return move.value; // Descent
-	//return -move.value; // Ascent
+	//return move.value; // Descent
+	return -move.value; // Ascent
 }
