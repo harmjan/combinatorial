@@ -3,6 +3,12 @@
 #include <vector>
 #include <list>
 
+#include <algorithm>
+/*
+#include "../loop/WhitleyLoop.h"
+#include "../loop/WhitleyLoop.cpp"
+*/
+
 #include <cassert>
 
 const bool SHOW_STEPS = true;
@@ -143,13 +149,18 @@ int main()
 				Wprime[wprime_index].value -= walsh_coefficients[walsh_index];
 			}
 
-			// Look at what bits are set in this walsh coefficient number
-			// which translates to what bits in the bitstring and thus
-			// the S vector are influenced by this Wprime entry.
-			for( unsigned int j=0; j<k; ++j ) {
-				if( walsh_index & pow2(j) ) {
-					Wprime[wprime_index].influenced_sums.push_front(&S[subfunctions[i].first[j]]);
-					S[subfunctions[i].first[j]].walsh_coefficients.push_front(&Wprime[wprime_index]);
+			// Since we now know that Wprime[wprime_index] is non-zero, add
+			// the connections from Wprime[wprime_index] to S and vice versa
+			// if they aren't there already
+			if( Wprime[wprime_index].influenced_sums.empty() ) {
+				// Loop over all bits in wprime_index, if a bit is set
+				// it means that the value is influenced by the S vector
+				// entry with that bit number, add the mutual pointer.
+				for( unsigned int j=0; j<n; ++j ) {
+					if( wprime_index & pow2(j) ) {
+						Wprime[wprime_index].influenced_sums.push_front(&S[j]);
+						S[j].walsh_coefficients.push_front(&Wprime[wprime_index]);
+					}
 				}
 			}
 		}
@@ -194,4 +205,6 @@ int main()
 			S[i].buffer_entry = B.begin();
 		}
 	}
+
+	//WhitleyLoop::run( bitstring, S, Wprime, B );
 }
