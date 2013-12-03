@@ -32,7 +32,7 @@ struct walsh_vector_entry {
 	double value;
 	std::list<s_vector_entry*> influenced_sums;
 };
-std::vector<walsh_vector_entry> Wprime;
+std::unordered_map<std::vector<bool>, walsh_vector_entry> Wprime;
 
 std::list<s_vector_entry*> B;
 
@@ -101,7 +101,6 @@ int main()
 
 	// Transform the subfunctions into the walsh coefficients
 	// and initialize the Wprime and S datastructures
-	Wprime.resize(pow2(n));
 	S.resize(n);
 	for( unsigned int i=0; i<n; ++i ) {
 		// Calculate the subfunction walsh coefficients
@@ -125,20 +124,19 @@ int main()
 
 			// Loop over all bits in walsh_index; if a bit is
 			// set, set the correct bit in the wprime_index
-			unsigned long long wprime_index = 0;
+			std::vector<bool> wprime_index(n, false);
 			for( unsigned int j=0; j<k; ++j ) {
 				if( walsh_index & pow2(j) ) {
-					wprime_index += pow2(subfunctions[i].first[k-j-1]);
+					wprime_index[subfunctions[i].first[j]] = true;
 				}
 			}
 
 			// Calculate the correct sign
 			// TODO This implementation is O(n), it can probably be done smarter
-			unsigned long long mask=1;
 			int bitcount = 0;
 			for( unsigned int j=0; j<n; ++j ) {
-				bitcount += ((bitstring[j]&&(wprime_index&mask)) ? 1 : 0 );
-				mask = mask << 1;
+				if( bitstring[j] && wprime_index[j] )
+					bitcount += 1;
 			}
 
 			// Add the walsh coefficient with the right sign to Wprime
@@ -156,55 +154,47 @@ int main()
 				// it means that the value is influenced by the S vector
 				// entry with that bit number, add the mutual pointer.
 				for( unsigned int j=0; j<n; ++j ) {
-					if( wprime_index & pow2(j) ) {
+					if( wprime_index[j] ) {
 						Wprime[wprime_index].influenced_sums.push_front(&S[j]);
 						S[j].walsh_coefficients.push_front(&Wprime[wprime_index]);
 					}
 				}
 			}
 		}
-
-		// Initialize the buffer iterator to the past the end iterator
-		S[i].buffer_entry = B.end();
-		S[i].bitstring_index = i;
 	}
 
 	if( DEBUG ) {
 		std::cout << std::endl << "Non-zero entries of Wprime vector:" << std::endl;
-		for( unsigned long long i=0; i<pow2(n); ++i ) {
-			if( Wprime[i].value != 0 ) { // TODO epsilon comparison
-				std::cout << "\tWprime[";
-				for( unsigned int j=0; j<n; ++j ) {
-					std::cout << ((i & pow2(n-j-1)) ? "1" : "0") ;
-				}
-				std::cout << "] = " << Wprime[i].value << std::endl;
-			}
+		for( auto entry : Wprime ) {
+			std::cout << "\tWprime[";
+			for( bool bit : entry.first )
+				std::cout << bit;
+			std::cout << "] = " << entry.second.value << std::endl;
 		}
 	}
 
-	// Calculate the initial S vector value by summing all walsh
-	// coefficients that influence this sum.
+	// Initialize the S vector and buffer B. Only the pointer between the
+	// structures were setup in the previous fase, now the walsh coefficients
+	// must be summed into the S vector value and added to buffer B.
 	for( unsigned int i=0; i<n; ++i ) {
 		S[i].value = 0;
 		for( struct walsh_vector_entry* coef_index : S[i].walsh_coefficients ) {
 			S[i].value += coef_index->value;
 		}
+		// Initialize the buffer iterator to the past the end iterator
+		if( S[i].value < 0 ) {
+			B.push_front(&S[i]);
+			S[i].buffer_entry = B.begin();
+		} else {
+			S[i].buffer_entry = B.end();
+		}
+		S[i].bitstring_index = i;
 	}
 
 	if( DEBUG ) {
 		std::cout << std::endl << "The S vector:" << std::endl;
 		for( unsigned int i=0; i<n; ++i ) {
 			std::cout << "\tS[" << i << "] = " << S[i].value << " with " << S[i].walsh_coefficients.size() << " walsh coefficients" << std::endl;
-		}
-	}
-
-	// Initialize buffer B by looping over the S vector and
-	// adding all entries with a move that would improve the
-	// fitness.
-	for( unsigned int i=0; i<n; ++i ) {
-		if( S[i].value < 0 ) {
-			B.push_front(&S[i]);
-			S[i].buffer_entry = B.begin();
 		}
 	}
 
