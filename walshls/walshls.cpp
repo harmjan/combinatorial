@@ -4,17 +4,15 @@
 #include <list>
 
 #include <algorithm>
-/*
-#include "../loop/WhitleyLoop.h"
-#include "../loop/WhitleyLoop.cpp"
-*/
 
 #include <cassert>
 
 const bool SHOW_STEPS = true;
-const bool DEBUG      = true;
+const bool DEBUG      = false;
 
-// Global variables (I know, I am lazy :))
+const unsigned int alpha = 5;
+
+// Global variables for shared data
 unsigned int n, k;
 // The format of the file in memory
 std::vector<std::pair<std::vector<int>,std::vector<double>>> subfunctions(n);
@@ -26,6 +24,7 @@ struct s_vector_entry {
 	double value;
 	std::list<walsh_vector_entry*> walsh_coefficients;
 	std::list<s_vector_entry*>::iterator buffer_entry;
+	int bitstring_index;
 };
 std::vector<s_vector_entry> S;
 
@@ -167,13 +166,14 @@ int main()
 
 		// Initialize the buffer iterator to the past the end iterator
 		S[i].buffer_entry = B.end();
+		S[i].bitstring_index = i;
 	}
 
 	if( DEBUG ) {
 		std::cout << std::endl << "Non-zero entries of Wprime vector:" << std::endl;
 		for( unsigned long long i=0; i<pow2(n); ++i ) {
 			if( Wprime[i].value != 0 ) { // TODO epsilon comparison
-				std::cout << "Wprime[";
+				std::cout << "\tWprime[";
 				for( unsigned int j=0; j<n; ++j ) {
 					std::cout << ((i & pow2(n-j-1)) ? "1" : "0") ;
 				}
@@ -192,19 +192,138 @@ int main()
 	}
 
 	if( DEBUG ) {
-		std::cout << std::endl << "The S vector" << std::endl;
+		std::cout << std::endl << "The S vector:" << std::endl;
 		for( unsigned int i=0; i<n; ++i ) {
-			std::cout << "S[" << i << "] = " << S[i].value << " with " << S[i].walsh_coefficients.size() << " walsh coefficients" << std::endl;
+			std::cout << "\tS[" << i << "] = " << S[i].value << " with " << S[i].walsh_coefficients.size() << " walsh coefficients" << std::endl;
 		}
 	}
 
-	// Initialize buffer B
+	// Initialize buffer B by looping over the S vector and
+	// adding all entries with a move that would improve the
+	// fitness.
 	for( unsigned int i=0; i<n; ++i ) {
-		if( S[i].value > 0 ) {
+		if( S[i].value < 0 ) {
 			B.push_front(&S[i]);
 			S[i].buffer_entry = B.begin();
 		}
 	}
 
-	//WhitleyLoop::run( bitstring, S, Wprime, B );
+	if( DEBUG ) {
+		std::cout << std::endl << "Buffer B:" << std::endl;
+		unsigned int entry_num = 0;
+		for( auto entry : B ) {
+			std::cout << "\tB[" << entry_num << "] = S[" << entry->bitstring_index << "] = " << entry->value << std::endl;
+			++entry_num;
+		}
+		std::cout << std::endl;
+	}
+
+	std::cout << "Starting with bitstring ";
+	for( bool bit : bitstring )
+		std::cout << bit;
+	std::cout << std::endl;
+
+	// Start local searching, as long as you have moves in the buffer B pick
+	// a best approximation, do that move and update the structures.
+	unsigned int iteration = 0;
+	while( !B.empty() ) {
+		// Get the next best move out of buffer B, if buffer B is larger than
+		// alpha items pick the best of the first alpha items.
+		s_vector_entry* flipTarget;
+		{
+			// Scan the first alpha items and save the best improving move
+			unsigned int itemsScanned = 0;
+			std::list<s_vector_entry*>::iterator bestMove = B.begin();
+			for ( std::list<s_vector_entry*>::iterator i=++B.begin() ; itemsScanned < alpha && i != B.end() ; i++ )
+			{
+				// We want the lowest S vector value
+				if ( (**i).value < (**bestMove).value )
+					bestMove = i;
+				itemsScanned++;
+			}
+
+			// Remove best move from the buffer
+			flipTarget = *bestMove;
+			flipTarget->buffer_entry = B.end();
+			B.erase(bestMove);
+			//TODO: sort?
+		}
+
+		std::list<s_vector_entry*> dirty; // We store updated partial sums here
+		std::list<walsh_vector_entry*>& coefficients = flipTarget->walsh_coefficients;
+
+		// Flip bit in bitstring
+		bitstring[flipTarget->bitstring_index] = !bitstring[flipTarget->bitstring_index];
+
+		if( SHOW_STEPS ) {
+			std::cout << "\tIteration " << iteration << ": ";
+			for( bool bit : bitstring )
+				std::cout << bit;
+			std::cout << std::endl;
+		}
+
+		// Update the S vector sums
+		// For every walsh coefficient i that contains the bit being flipped
+		for ( std::list<walsh_vector_entry*>::iterator i = coefficients.begin() ; i != coefficients.end() ; i++ )
+		{
+			// Flip walsh coefficient
+			(*i)->value *= -1;
+
+			// For every partial sum that this coefficient contributes to (including the bit just flipped)
+			for ( std::list<s_vector_entry*>::iterator r = (*i)->influenced_sums.begin() ; r != (*i)->influenced_sums.end() ; r++ )
+			{
+				// Update partial sum
+				(*r)->value += 2*((*i)->value);
+				// Mark partial sum as dirty
+				dirty.push_back(*r);
+			}
+		}
+
+		if( DEBUG ) {
+			std::cout << "The S vector after iteration " << iteration << ":" << std::endl;
+			for( unsigned int i=0; i<n; ++i ) {
+				std::cout << "\tS[" << i << "] = " << S[i].value << std::endl;
+			}
+		}
+
+		// Update buffer B by looping over all S vector sums that were changed
+		// and adding/removing the sums if necessary.
+		for ( std::list<s_vector_entry*>::iterator r=dirty.begin(); r!=dirty.end(); ++r )
+		{
+			s_vector_entry *item = *r;
+			// See if we need to add this S vector entry
+			if ( item->value < 0 ) {
+				// Only add this entry if it is not in the buffer
+				if( item->buffer_entry == B.end() ) {
+					B.push_front(item);
+					item->buffer_entry = B.begin();
+					//TODO: sort?
+				}
+			} else { // Otherwise see if we need to remove this S vector entry
+				// Only remove this entry if it is in the buffer
+				if( item->buffer_entry != B.end() ) {
+					B.erase(item->buffer_entry);
+					item->buffer_entry = B.end();
+					//TODO: sort?
+				}
+			}
+		}
+
+		if( DEBUG ) {
+			std::cout << "Buffer B after iteration " << iteration << ":" << std::endl;
+			unsigned int entry_number = 0;
+			for( auto it : B ) {
+				std::cout << "\tB[" << entry_number << "] = S[" << it->bitstring_index << "] = " << it->value << std::endl;
+				++entry_number;
+			}
+		}
+
+		++iteration;
+	}
+
+	std::cout << "Found answer in " << iteration << " iterations" << std::endl;
+	std::cout << "Local optimum: ";
+	for( bool bit : bitstring )
+		std::cout << bit;
+	std::cout << std::endl << std::flush;
 }
