@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <list>
+#include <unordered_map>
 
 #include <algorithm>
 
@@ -224,7 +225,7 @@ int main()
 			// Scan the first alpha items and save the best improving move
 			unsigned int itemsScanned = 0;
 			std::list<s_vector_entry*>::iterator bestMove = B.begin();
-			for ( std::list<s_vector_entry*>::iterator i=++B.begin() ; itemsScanned < alpha && i != B.end() ; i++ )
+			for ( std::list<s_vector_entry*>::iterator i=bestMove ; itemsScanned < alpha && i != B.end() ; i++ )
 			{
 				// We want the lowest S vector value
 				if ( (**i).value < (**bestMove).value )
