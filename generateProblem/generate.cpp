@@ -4,9 +4,14 @@
 
 std::vector<std::pair<std::vector<int>,std::vector<double>>> subfunctions;
 
-int main() {
+int main(int argc,char *argv[]) {
 	int n, k;
-	std::cin >> n >> k;
+	//std::cin >> n >> k;
+	n = atoi(argv[1]);
+	k = atoi(argv[2]);
+
+	if( n < k)
+		return -1;
 
 	srand(time(NULL));
 
