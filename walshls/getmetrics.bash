@@ -26,8 +26,7 @@ do
 for j in $(seq 1 3)
 do
 time1=$(date +%s.%N)
-./$2 < $file 
-sleep 1
+./$2 < $file
 time2=$(date +%s.%N)
 res[$j]=$(echo $time2 - $time1 | bc)
 done
