@@ -312,6 +312,22 @@ int main()
 		++iteration;
 	}
 
+	if (DEBUG)
+	{
+		// Verify that result is a local optimum
+
+		bool localOptimum = true;
+		for ( auto entry : S )
+			if ( *entry < 0 )
+				localOptimum = false;
+		if ( localOptimum )
+			std::cout << "Local optimum verified in walsh space." << std::endl;
+		else
+			std::cout << "ERROR: local optimum not verified in walsh space" << std::endl;
+
+		// TODO verify local optimum outside of walsh space
+	}
+
 	std::cout << "Found answer in " << iteration << " iterations" << std::endl;
 	std::cout << "Local optimum: ";
 	for( bool bit : bitstring )
