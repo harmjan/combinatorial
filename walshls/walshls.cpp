@@ -318,7 +318,7 @@ int main()
 
 		bool localOptimum = true;
 		for ( auto entry : S )
-			if ( *entry < 0 )
+			if ( entry.value < 0 )
 				localOptimum = false;
 		if ( localOptimum )
 			std::cout << "Local optimum verified in walsh space." << std::endl;
