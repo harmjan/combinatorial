@@ -2,6 +2,8 @@
 #include <vector>
 #include <utility>
 
+#include <chrono>
+
 #include <cassert>
 
 // Global variables (I know, I am lazy :))
@@ -9,7 +11,8 @@ unsigned int n, k;
 // The format of the file in memory
 std::vector<std::pair<std::vector<int>,std::vector<double>>> subfunctions(n);
 
-const bool SHOW_STEPS = true;
+const bool TIMING     = true;
+const bool SHOW_STEPS = true && !TIMING;
 
 inline unsigned long long pow2(unsigned int exp) {
 	return 1UL << exp;
@@ -64,10 +67,15 @@ int main() {
 
 	// Iterate as long as there is an improving move
 	double fitness = calculateFitness(bitstring);
-	std::cout << "Starting with bitstring ";
-	for( bool bit : bitstring )
-		std::cout << bit;
-	std::cout << " with initial fitness " << fitness << std::endl;
+	std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
+	if( TIMING ) {
+		start = std::chrono::high_resolution_clock::now();
+	} else {
+		std::cout << "Starting with bitstring ";
+		for( bool bit : bitstring )
+			std::cout << bit;
+		std::cout << " with initial fitness " << fitness << std::endl;
+	}
 
 	int iteration = 0;
 	while(true) {
@@ -96,10 +104,17 @@ int main() {
 		}
 	}
 
-	std::cout << "Found answer in " << iteration << " iterations" << std::endl;
-	std::cout << "Local optimum: ";
-	for( bool bit : bitstring )
-		std::cout << bit;
-	std::cout << " with fitness: " << fitness << std::endl;
+	if( TIMING ) {
+		end = std::chrono::high_resolution_clock::now();
+
+		std::chrono::duration<double> elapsed_seconds = end - start;
+		std::cout << elapsed_seconds.count() /*<< std::endl*/;
+	} else {
+		std::cout << "Found answer in " << iteration << " iterations" << std::endl;
+		std::cout << "Local optimum: ";
+		for( bool bit : bitstring )
+			std::cout << bit;
+		std::cout << " with fitness: " << fitness << std::endl;
+	}
 	std::cout << std::flush;
 }

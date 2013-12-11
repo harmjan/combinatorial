@@ -6,10 +6,13 @@
 
 #include <algorithm>
 
+#include <chrono>
+
 #include <cassert>
 
-const bool SHOW_STEPS = true;
-const bool DEBUG      = false;
+const bool TIMING     = true;
+const bool SHOW_STEPS = true && !TIMING;
+const bool DEBUG      = false && !TIMING;
 
 const unsigned int alpha = 5;
 
@@ -98,6 +101,11 @@ int main()
 		for( unsigned int j=0; j<pow2(k); ++j ) {
 			std::cin >> subfunctions[i].second[j];
 		}
+	}
+
+	std::chrono::time_point<std::chrono::high_resolution_clock> preprocess, start, end;
+	if( TIMING ) {
+		preprocess = std::chrono::high_resolution_clock::now();
 	}
 
 	// Transform the subfunctions into the walsh coefficients
@@ -209,10 +217,14 @@ int main()
 		std::cout << std::endl;
 	}
 
-	std::cout << "Starting with bitstring ";
-	for( bool bit : bitstring )
-		std::cout << bit;
-	std::cout << std::endl;
+	if( TIMING ) {
+		start = std::chrono::high_resolution_clock::now();
+	} else {
+		std::cout << "Starting with bitstring ";
+		for( bool bit : bitstring )
+			std::cout << bit;
+		std::cout << std::endl;
+	}
 
 	// Start local searching, as long as you have moves in the buffer B pick
 	// a best approximation, do that move and update the structures.
@@ -320,17 +332,25 @@ int main()
 		for ( auto entry : S )
 			if ( entry.value < 0 )
 				localOptimum = false;
-		if ( localOptimum )
-			std::cout << "Local optimum verified in walsh space." << std::endl;
-		else
-			std::cout << "ERROR: local optimum not verified in walsh space" << std::endl;
+		assert( localOptimum );
 
 		// TODO verify local optimum outside of walsh space
 	}
 
-	std::cout << "Found answer in " << iteration << " iterations" << std::endl;
-	std::cout << "Local optimum: ";
-	for( bool bit : bitstring )
-		std::cout << bit;
-	std::cout << std::endl << std::flush;
+	if( TIMING ) {
+		end = std::chrono::high_resolution_clock::now();
+
+		std::chrono::duration<double> elapsed_seconds = end - preprocess;
+		//std::chrono::duration<double> elapsed_seconds_preprocess = start - preprocess;
+		//std::chrono::duration<double> elapsed_seconds_iterating  = end - start;
+		//std::cout << elapsed_seconds_preprocess.count() << ";" << elapsed_seconds_iterating.count() << std::endl;
+		std::cout << elapsed_seconds.count() /*<< std::endl*/;
+	} else {
+		std::cout << "Found answer in " << iteration << " iterations" << std::endl;
+		std::cout << "Local optimum: ";
+		for( bool bit : bitstring )
+			std::cout << bit;
+		std::cout << std::endl;
+	}
+	std::cout << std::flush;
 }

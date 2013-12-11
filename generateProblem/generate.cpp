@@ -67,4 +67,5 @@ int main(int argc,char *argv[]) {
 			std::cout << fitness << " ";
 		std::cout << std::endl;
 	}
+	std::cout << std::flush;
 }
