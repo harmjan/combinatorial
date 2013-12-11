@@ -128,7 +128,7 @@ int main()
 			std::vector<bool> wprime_index(n, false);
 			for( unsigned int j=0; j<k; ++j ) {
 				if( walsh_index & pow2(j) ) {
-					wprime_index[subfunctions[i].first[j]] = true;
+					wprime_index[subfunctions[i].first[k-j-1]] = true;
 				}
 			}
 
