@@ -340,17 +340,45 @@ int main()
 	if( TIMING ) {
 		end = std::chrono::high_resolution_clock::now();
 
-		std::chrono::duration<double> elapsed_seconds = end - preprocess;
-		//std::chrono::duration<double> elapsed_seconds_preprocess = start - preprocess;
-		//std::chrono::duration<double> elapsed_seconds_iterating  = end - start;
+		std::chrono::duration<double> elapsed_seconds = end - preprocess; //total time
+		std::chrono::duration<double> elapsed_seconds_preprocess = start - preprocess; //preprocess time
+		std::chrono::duration<double> elapsed_seconds_iterating  = end - start; //local search time
 		//std::cout << elapsed_seconds_preprocess.count() << ";" << elapsed_seconds_iterating.count() << std::endl;
-		std::cout << elapsed_seconds.count() /*<< std::endl*/;
+		std::cout << elapsed_seconds.count()<< ";" 
+		        << elapsed_seconds_preprocess.count()<< ";" 
+			<<  elapsed_seconds_iterating.count() << ";" 
+			<<  elapsed_seconds_iterating.count()/iteration <<";"
+			<< iteration;                  /*<< std::endl*/;
 	} else {
 		std::cout << "Found answer in " << iteration << " iterations" << std::endl;
 		std::cout << "Local optimum: ";
 		for( bool bit : bitstring )
 			std::cout << bit;
 		std::cout << std::endl;
+		
+		double sum=0;
+		for(auto entry : S)
+			sum+=entry.value;
+			
+		std::cout << "total fitness: " << sum;
 	}
 	std::cout << std::flush;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

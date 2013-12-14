@@ -114,7 +114,7 @@ int main() {
 		std::cout << "Local optimum: ";
 		for( bool bit : bitstring )
 			std::cout << bit;
-		std::cout << " with fitness: " << fitness << std::endl;
+		std::cout << " with total fitness: " << fitness << std::endl;
 	}
 	std::cout << std::flush;
 }
