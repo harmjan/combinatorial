@@ -6,7 +6,7 @@
 
 #include <cassert>
 
-// Global variables (I know, I am lazy :))
+// Global variables
 unsigned int n, k;
 // The format of the file in memory
 std::vector<std::pair<std::vector<int>,std::vector<double>>> subfunctions(n);
@@ -106,9 +106,10 @@ int main() {
 
 	if( TIMING ) {
 		end = std::chrono::high_resolution_clock::now();
-
 		std::chrono::duration<double> elapsed_seconds = end - start;
-		std::cout << elapsed_seconds.count() /*<< std::endl*/;
+
+		// Output the runtime and number of iterations space separated
+		std::cout << elapsed_seconds.count() << " " << iteration << " " << fitness;
 	} else {
 		std::cout << "Found answer in " << iteration << " iterations" << std::endl;
 		std::cout << "Local optimum: ";
@@ -116,5 +117,7 @@ int main() {
 			std::cout << bit;
 		std::cout << " with total fitness: " << fitness << std::endl;
 	}
+
+	// Force a flush
 	std::cout << std::flush;
 }

@@ -1,29 +1,32 @@
 #!/bin/bash
 
-rm results.csv
+echo "# N K naive-runtime naive-iterations naive-fitness walshls-preprocess-runtime walshls-iterations-runtime walshls-iterations walshls-fitness" > results.dat
 
 # Generate a lot of instances with a wide range of N and K
 # and let the programs time the results
-for n in $(seq 100 100 1000)
+for n in $(seq 100 100 10000)
 do
-	for k in $(seq 1 $n)
+	for k in $(seq 1 10)
 	do
-		if [ $n -ge $k ];
+		if (( $k <= $n ))
 		then
-		if [ $k -le 10 ];
-		then
-			echo "Running timing tests with naive and walshls for N=$n and K=$k";
+			echo "Running timing tests with naive and walshls for N=$n and K=$k"
 			problemFile=./problemInstances/generated/random_n_${n}_k_${k}
-			./generateProblem/generate $n $k > ${problemFile}
+
+			# Only generate an instance if it doesn't exists already
+			if [ ! -f ${ProblemFile} ]
+			then
+				echo "$n $k" | ./generateProblem/generate > ${problemFile}
+			fi
 
 			# It's a bit bodged but this makes it easy to compare results
-			echo -n "$n;$k;" >> results.csv
-			./naive/naive     < ${problemFile} >> results.csv
-			echo -n ";" >> results.csv
-			./walshls/walshls < ${problemFile} >> results.csv
-			echo "" >> results.csv
-		fi
+			echo -n "$n $k " >> results.dat
+			./naive/naive     < ${problemFile} >> results.dat
+			echo -n " " >> results.dat
+			./walshls/walshls < ${problemFile} >> results.dat
+			echo "" >> results.dat
 		fi
 	done
+	# This newline makes gnuplot understand the data better
+	echo "" >> results.dat
 done
-
