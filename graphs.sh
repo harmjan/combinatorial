@@ -14,12 +14,12 @@ do
 			problemFile=./problemInstances/generated/random_n_${n}_k_${k}
 
 			# Only generate an instance if it doesn't exists already
-			if [ ! -f ${ProblemFile} ]
+			if [ ! -f ${problemFile} ]
 			then
 				echo "$n $k" | ./generateProblem/generate > ${problemFile}
 			fi
 
-			# It's a bit bodged but this makes it easy to compare results
+			# Append the timing results without newlines space separated to the file
 			echo -n "$n $k " >> results.dat
 			./naive/naive     < ${problemFile} >> results.dat
 			echo -n " " >> results.dat
