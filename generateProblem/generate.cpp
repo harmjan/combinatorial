@@ -48,7 +48,11 @@ int main(int argc,char *argv[]) {
 		// Generate the fitness values
 		subfunctions[i].second.resize(1<<k);
 		for( int j=0; j<(1<<k); ++j ) {
-			subfunctions[i].second[j] = static_cast<double>(rand()) / static_cast<double>(RAND_MAX/2) - 1;
+			// Make the value 0 with 50% change
+			if( rand() % 100 < 50 )
+				subfunctions[i].second[j] = 0;
+			else
+				subfunctions[i].second[j] = static_cast<double>(rand()) / static_cast<double>(RAND_MAX/2) - 1;
 		}
 	}
 
