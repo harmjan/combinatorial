@@ -15,17 +15,18 @@ const bool SHOW_STEPS = true && !TIMING;
 const bool DEBUG      = false && !TIMING;
 
 const unsigned int alpha = 10;
+const long double EPSILON = 1e-5;
 
 // Global variables for shared data
 unsigned int n, k;
 // The format of the file in memory
-std::vector<std::pair<std::vector<int>,std::vector<double>>> subfunctions(n);
+std::vector<std::pair<std::vector<int>,std::vector<long double>>> subfunctions;
 
 // Prototype so the S vector can refer to it
 struct walsh_vector_entry;
 
 struct s_vector_entry {
-	double value;
+	long double value;
 	std::list<walsh_vector_entry*> walsh_coefficients;
 	std::list<s_vector_entry*>::iterator buffer_entry;
 	int bitstring_index;
@@ -33,7 +34,7 @@ struct s_vector_entry {
 std::vector<s_vector_entry> S;
 
 struct walsh_vector_entry {
-	double value;
+	long double value;
 	std::list<s_vector_entry*> influenced_sums;
 };
 std::unordered_map<std::vector<bool>, walsh_vector_entry> Wprime;
@@ -44,7 +45,7 @@ inline unsigned long long pow2(unsigned int exp) {
 	return 1UL << exp;
 }
 
-void walsh_recursive(std::vector<double>& from, std::vector<double>& to, unsigned int start, unsigned int end) {
+void walsh_recursive(std::vector<long double>& from, std::vector<long double>& to, unsigned int start, unsigned int end) {
 	unsigned int size = end-start;
 	if( size == 1 )
 		return;
@@ -60,9 +61,9 @@ void walsh_recursive(std::vector<double>& from, std::vector<double>& to, unsigne
 /**
  * Calculate the walsh coefficient for a vector of 2^k entries.
  */
-inline std::vector<double> walsh_transform(const std::vector<double>& fitness_evaluations) {
-	std::vector<double> walsh1(fitness_evaluations);
-	std::vector<double> walsh2(pow2(k));
+inline std::vector<long double> walsh_transform(const std::vector<long double>& fitness_evaluations) {
+	std::vector<long double> walsh1(fitness_evaluations);
+	std::vector<long double> walsh2(pow2(k));
 	walsh_recursive(walsh1, walsh2, 0, pow2(k));
 
 	// The recursive functions swaps the vector to read to and
@@ -74,8 +75,7 @@ inline std::vector<double> walsh_transform(const std::vector<double>& fitness_ev
 		return walsh2;
 }
 
-int main()
-{
+int main() {
 	std::cin >> n >> k;
 
 	// Read in the start bitstring
@@ -103,6 +103,7 @@ int main()
 		}
 	}
 
+	// Create the timing variables and record the start time
 	std::chrono::time_point<std::chrono::high_resolution_clock> preprocess, start, end;
 	if( TIMING ) {
 		preprocess = std::chrono::high_resolution_clock::now();
@@ -113,11 +114,11 @@ int main()
 	S.resize(n);
 	for( unsigned int i=0; i<n; ++i ) {
 		// Calculate the subfunction walsh coefficients
-		std::vector<double> walsh_coefficients = walsh_transform(subfunctions[i].second);
+		std::vector<long double> walsh_coefficients = walsh_transform(subfunctions[i].second);
 
 		if( DEBUG ) {
 			std::cout << "Walsh coefficients of subfunction " << i << ": ";
-			for( double coef : walsh_coefficients )
+			for( long double coef : walsh_coefficients )
 				std::cout << coef << " ";
 			std::cout << std::endl;
 		}
@@ -205,9 +206,7 @@ int main()
 		for( unsigned int i=0; i<n; ++i ) {
 			std::cout << "\tS[" << i << "] = " << S[i].value << " with " << S[i].walsh_coefficients.size() << " walsh coefficients" << std::endl;
 		}
-	}
 
-	if( DEBUG ) {
 		std::cout << std::endl << "Buffer B:" << std::endl;
 		unsigned int entry_num = 0;
 		for( auto entry : B ) {
@@ -218,12 +217,14 @@ int main()
 	}
 
 	if( TIMING ) {
+		// Time the start time of the iterating through the algorithm
 		start = std::chrono::high_resolution_clock::now();
 	} else {
+		// Dump some info over this run
 		std::cout << "Starting with bitstring ";
 		for( bool bit : bitstring )
 			std::cout << bit;
-		double fitness = 0;
+		long double fitness = 0;
 		for( auto entry : Wprime )
 			fitness += entry.second.value;
 		std::cout << " with initial fitness " << fitness << std::endl;
@@ -240,8 +241,7 @@ int main()
 			// Scan the first alpha items and save the best improving move
 			unsigned int itemsScanned = 0;
 			std::list<s_vector_entry*>::iterator bestMove = B.begin();
-			for ( std::list<s_vector_entry*>::iterator i=bestMove ; itemsScanned < alpha && i != B.end() ; i++ )
-			{
+			for ( std::list<s_vector_entry*>::iterator i=bestMove ; itemsScanned < alpha && i != B.end() ; i++ ) {
 				// We want the lowest S vector value
 				if ( (**i).value < (**bestMove).value )
 					bestMove = i;
@@ -263,14 +263,12 @@ int main()
 
 		// Update the S vector sums
 		// For every walsh coefficient i that contains the bit being flipped
-		for ( std::list<walsh_vector_entry*>::iterator i = coefficients.begin() ; i != coefficients.end() ; i++ )
-		{
+		for ( std::list<walsh_vector_entry*>::iterator i = coefficients.begin() ; i != coefficients.end() ; i++ ) {
 			// Flip walsh coefficient
 			(*i)->value *= -1;
 
 			// For every partial sum that this coefficient contributes to (including the bit just flipped)
-			for ( std::list<s_vector_entry*>::iterator r = (*i)->influenced_sums.begin() ; r != (*i)->influenced_sums.end() ; r++ )
-			{
+			for ( std::list<s_vector_entry*>::iterator r = (*i)->influenced_sums.begin() ; r != (*i)->influenced_sums.end() ; r++ ) {
 				// Update partial sum
 				(*r)->value += 2*((*i)->value);
 				// Mark partial sum as dirty
@@ -287,11 +285,10 @@ int main()
 
 		// Update buffer B by looping over all S vector sums that were changed
 		// and adding/removing the sums if necessary.
-		for ( std::list<s_vector_entry*>::iterator r=dirty.begin(); r!=dirty.end(); ++r )
-		{
+		for( std::list<s_vector_entry*>::iterator r=dirty.begin(); r!=dirty.end(); ++r ) {
 			s_vector_entry *item = *r;
 			// See if we need to add this S vector entry
-			if ( item->value < 0 ) {
+			if( item->value < -EPSILON ) {
 				// Only add this entry if it is not in the buffer
 				if( item->buffer_entry == B.end() ) {
 					B.push_front(item);
@@ -320,47 +317,42 @@ int main()
 		++iteration;
 
 		if( SHOW_STEPS ) {
+			// Show some info over this iteration
 			std::cout << "\tIteration " << iteration << ": ";
 			for( bool bit : bitstring )
 				std::cout << bit;
 			std::cout << " with fitness ";
-			double fitness = 0;
+			// Calculate the fitness of this run, this is incredibly slow!
+			long double fitness = 0;
 			for( auto entry : Wprime )
 				fitness += entry.second.value;
 			std::cout << fitness << std::endl;
 		}
 	}
 
-	if (DEBUG)
-	{
-		// Verify that result is a local optimum
-
-		bool localOptimum = true;
-		for ( auto entry : S )
-			if ( entry.value < 0 )
-				localOptimum = false;
-		assert( localOptimum );
-
-		// TODO verify local optimum outside of walsh space
-	}
-
 	if( TIMING ) {
+		// Time the end of run
 		end = std::chrono::high_resolution_clock::now();
 
 		std::chrono::duration<double> elapsed_seconds_preprocess = start - preprocess;
 		std::chrono::duration<double> elapsed_seconds_iterating  = end - start;
 
-		double fitness;
+		// Calculate the fitness of the resulting bitstring,
+		// this is again O(2^N) so very slow!
+		long double fitness;
 		for(auto entry : Wprime)
 			fitness+=entry.second.value;
 
+		// Print the measured time space separated
 		std::cout << elapsed_seconds_preprocess.count() << " " << elapsed_seconds_iterating.count() << " " << iteration << " " << fitness;
 	} else {
+		// Print some info about this run
 		std::cout << "Found answer in " << iteration << " iterations" << std::endl;
 		std::cout << "Local optimum: ";
 		for( bool bit : bitstring )
 			std::cout << bit;
-		double fitness=0;
+		// Calculate the fitness of the end bitstring, again, very slow!
+		long double fitness=0;
 		for(auto entry : Wprime)
 			fitness+=entry.second.value;
 		std::cout << " with total fitness: " << fitness << std::endl;
