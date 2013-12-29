@@ -192,7 +192,7 @@ int main() {
 			S[i].value += coef_index->value;
 		}
 		// Initialize the buffer iterator to the past the end iterator
-		if( S[i].value < 0 ) {
+		if( S[i].value < -EPSILON ) {
 			B.push_front(&S[i]);
 			S[i].buffer_entry = B.begin();
 		} else {
