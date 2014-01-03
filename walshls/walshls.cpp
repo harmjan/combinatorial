@@ -15,7 +15,7 @@ const bool SHOW_STEPS = true && !TIMING;
 const bool DEBUG      = false && !TIMING;
 
 const unsigned int alpha = 10;
-const long double EPSILON = 1e-5;
+const long double EPSILON = std::numeric_limits<long double>::epsilon();
 
 // Global variables for shared data
 unsigned int n, k;
