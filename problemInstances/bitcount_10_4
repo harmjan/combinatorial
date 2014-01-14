@@ -20,29 +20,3 @@
 0 1 1 2 1 2 2 3 1 2 2 3 2 3 3 4
 9 0 1 2
 0 1 1 2 1 2 2 3 1 2 2 3 2 3 3 4
-
-The program shouldn't read beyond the above data so this should be ignored
-
-Format:
-Two integers, first N than K
-The start bitstring consisting of N space separated 1's or 0's
-Than N lines with:
-	K ints which map the bits from total bitstring to the subbitstring
-	2^K floats, the output from the subfunctions iterate from subbitstring 00..0 to 11..1
-
-0000
-0001
-0010
-0011
-0100
-0101
-0110
-0111
-1000
-1001
-1010
-1011
-1100
-1101
-1110
-1111
